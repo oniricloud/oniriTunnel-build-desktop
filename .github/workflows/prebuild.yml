@@ -36,18 +36,15 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 20
+          npm install --global bare-make
           npm install --install-links --legacy-peer-deps
         if: ${{ matrix.platform == 'linux' }}
-      - run: sudo apt install libatomic1
-        if: ${{ matrix.platform == 'linux' }}
-      - run: npm install -g bare-make
-      - run: npm install
-      - name: "Show bare-make version"
-        run: bare-make --version
-      - name: "Generate appling linux "
-        run: bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
-      - name: "Build appling"
-        run: bare-make build
+
+      - name: Build Linux AppImage
+        run: |
+          bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+          bare-make build
+
       - name: Find & rename AppImage file
         id: find_file
         run: |
@@ -72,6 +69,7 @@ jobs:
         with:
           name: Oniri-Desktop-Linux-${{ matrix.arch }}-${{ matrix.tags }}.AppImage
           path: "${{ steps.find_file.outputs.APPIMAGE_PATH }}"
+          
   merge:
     runs-on: ubuntu-latest
     needs: prebuild
