@@ -41,7 +41,7 @@ jobs:
       - run: sudo apt install libatomic1
         if: ${{ matrix.platform == 'linux' }}
       - run: npm install -g bare-make
-      - run: npm run install
+      - run: npm install
       - name: "Show bare-make version"
         run: bare-make --version
       - name: "Generate appling linux "
@@ -72,21 +72,16 @@ jobs:
         with:
           name: Oniri-Desktop-Linux-${{ matrix.arch }}-${{ matrix.tags }}.AppImage
           path: "${{ steps.find_file.outputs.APPIMAGE_PATH }}"
-  release:
+  merge:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    if: github.ref == 'refs/heads/main'
+    needs: prebuild
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v4
         with:
-          path: artifacts/
+          path: install
           merge-multiple: true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          tag_name: v1.0.}
-          name: PearPass-Desktop-v1.0.0
-          files: artifacts/**
+          name: builds
+          path: install
+          retention-days: 1
