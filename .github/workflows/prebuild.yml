@@ -17,15 +17,7 @@ jobs:
     name: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.tags }}
     steps:
       - uses: actions/checkout@v4
-      - name: Support longpaths
-        if: ${{ matrix.platform == 'win32' }}
-        run: git config --global core.longpaths true
-      - uses: actions/cache@v4
-        with:
-          path: build/_drive
-          key: corestore-${{ matrix.platform }}-${{ matrix.arch }}-${{ github.sha }}
-          restore-keys: |
-            corestore-${{ matrix.platform }}-${{ matrix.arch }}-
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
