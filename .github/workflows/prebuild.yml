@@ -17,7 +17,7 @@ jobs:
     name: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.tags }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -44,7 +44,7 @@ jobs:
         id: find_file
         run: |
           set -euo pipefail
-          APPIMAGE_PATH=$(find "$GITHUB_WORKSPACE" -name "*.AppImage" -type f | head -n 1)
+          APPIMAGE_PATH=$(find "$GITHUB_WORKSPACE" -name "Oniri.AppImage" -type f | head -n 1)
           echo "Original AppImage: $APPIMAGE_PATH"
 
           NEW_NAME="Oniri-Desktop-Linux-${{ matrix.arch }}-${{ matrix.tags }}.AppImage"
