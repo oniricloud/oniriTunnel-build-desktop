@@ -1,0 +1,92 @@
+name: Build
+on:
+  workflow_dispatch:
+
+env:
+  CHANNEL_LINK: "pear://d5xqafujqx46hgeqeriuuyf1tdgxxgmdm9njijogrxcpc4exnkfy"
+jobs:
+  prebuild:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            arch: x64
+            tags: "v1"
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.tags }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Support longpaths
+        if: ${{ matrix.platform == 'win32' }}
+        run: git config --global core.longpaths true
+      - uses: actions/cache@v4
+        with:
+          path: build/_drive
+          key: corestore-${{ matrix.platform }}-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: |
+            corestore-${{ matrix.platform }}-${{ matrix.arch }}-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates build-essential git libgtk-4-dev pkg-config fuse file
+          # sudo apt-get install -y clang pkg-config libgtk-4-dev clang-tools fuse file
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          npm install --install-links --legacy-peer-deps
+        if: ${{ matrix.platform == 'linux' }}
+      - run: sudo apt install libatomic1
+        if: ${{ matrix.platform == 'linux' }}
+      - run: npm install -g bare-make
+      - run: npm run install
+      - name: "Show bare-make version"
+        run: bare-make --version
+      - name: "Generate appling linux "
+        run: bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+      - name: "Build appling"
+        run: bare-make build
+      - name: Find & rename AppImage file
+        id: find_file
+        run: |
+          set -euo pipefail
+          APPIMAGE_PATH=$(find "$GITHUB_WORKSPACE" -name "*.AppImage" -type f | head -n 1)
+          echo "Original AppImage: $APPIMAGE_PATH"
+
+          NEW_NAME="Oniri-Desktop-Linux-${{ matrix.arch }}-${{ matrix.tags }}.AppImage"
+          NEW_PATH="$GITHUB_WORKSPACE/$NEW_NAME"
+
+          mv "$APPIMAGE_PATH" "$NEW_PATH"
+          echo "Renamed AppImage to: $NEW_PATH"
+
+          echo "APPIMAGE_PATH=$NEW_PATH" >> "$GITHUB_OUTPUT"
+
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
+        if: ${{ matrix.platform == 'linux' }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ matrix.platform == 'linux' && steps.find_file.outputs.APPIMAGE_PATH != '' }}
+        with:
+          name: Oniri-Desktop-Linux-${{ matrix.arch }}-${{ matrix.tags }}.AppImage
+          path: "${{ steps.find_file.outputs.APPIMAGE_PATH }}"
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.}
+          name: PearPass-Desktop-v1.0.0
+          files: artifacts/**
